@@ -7,6 +7,13 @@ import serveStatic from "serve-static";
 import shopify from "./shopify.js";
 import productCreator from "./product-creator.js";
 import PrivacyWebhookHandlers from "./privacy.js";
+import mongoose from "mongoose";
+import cors from "cors";
+import dotenv from "dotenv";
+dotenv.config();
+
+import storefrontRoutes from "./routes/storefront.routes.js";
+import timerRoutes from "./routes/timer.routes.js";
 
 const PORT = parseInt(
   process.env.BACKEND_PORT || process.env.PORT || "3000",
@@ -20,6 +27,10 @@ const STATIC_PATH =
 
 const app = express();
 
+app.use(cors());
+mongoose.connect(process.env.MONGODB_URI || "")
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => console.error("MongoDB connection error:", err));
 // Set up Shopify authentication and webhook handling
 app.get(shopify.config.auth.path, shopify.auth.begin());
 app.get(
@@ -32,6 +43,8 @@ app.post(
   shopify.processWebhooks({ webhookHandlers: PrivacyWebhookHandlers })
 );
 
+app.use("/api/storefront", storefrontRoutes);
+
 // If you are adding routes outside of the /api path, remember to
 // also add a proxy rule for them in web/frontend/vite.config.js
 
@@ -39,35 +52,37 @@ app.use("/api/*", shopify.validateAuthenticatedSession());
 
 app.use(express.json());
 
-app.get("/api/products/count", async (_req, res) => {
-  const client = new shopify.api.clients.Graphql({
-    session: res.locals.shopify.session,
-  });
+// app.get("/api/products/count", async (_req, res) => {
+//   const client = new shopify.api.clients.Graphql({
+//     session: res.locals.shopify.session,
+//   });
 
-  const countData = await client.request(`
-    query shopifyProductCount {
-      productsCount {
-        count
-      }
-    }
-  `);
+//   const countData = await client.request(`
+//     query shopifyProductCount {
+//       productsCount {
+//         count
+//       }
+//     }
+//   `);
 
-  res.status(200).send({ count: countData.data.productsCount.count });
-});
+//   res.status(200).send({ count: countData.data.productsCount.count });
+// });
 
-app.post("/api/products", async (_req, res) => {
-  let status = 200;
-  let error = null;
+// app.post("/api/products", async (_req, res) => {
+//   let status = 200;
+//   let error = null;
 
-  try {
-    await productCreator(res.locals.shopify.session);
-  } catch (e) {
-    console.log(`Failed to process products/create: ${e.message}`);
-    status = 500;
-    error = e.message;
-  }
-  res.status(status).send({ success: status === 200, error });
-});
+//   try {
+//     await productCreator(res.locals.shopify.session);
+//   } catch (e) {
+//     console.log(`Failed to process products/create: ${e.message}`);
+//     status = 500;
+//     error = e.message;
+//   }
+//   res.status(status).send({ success: status === 200, error });
+// });
+
+app.use("/api/timers", timerRoutes);
 
 app.use(shopify.cspHeaders());
 app.use(serveStatic(STATIC_PATH, { index: false }));
