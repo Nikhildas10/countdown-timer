@@ -1,0 +1,29 @@
+{%- comment -%}
+  Countdown Timer — Theme App Extension block
+  This block:
+    1. Renders a mount <div> with the data the JS needs.
+    2. Loads the built stylesheet and script from extension assets.
+{%- endcomment -%}
+
+<div
+  id="ct-widget-mount"
+  data-api-host="{{ block.settings.api_host | escape }}"
+  data-shop="{{ shop.permanent_domain | escape }}"
+></div>
+
+{{ 'style.css' | asset_url | stylesheet_tag }}
+{{ 'countdown-widget.js' | asset_url | script_tag }}
+
+{% schema %}
+{
+  "name": "Countdown Timer",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "api_host",
+      "label": "host",
+    }
+  ]
+}
+{% endschema %}

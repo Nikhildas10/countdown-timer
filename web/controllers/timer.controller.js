@@ -6,15 +6,15 @@ export const getStorefrontTimers = async (req, res) => {
     if (!shop) {
       return res.status(400).json({ error: "Shop domain is required" });
     }
-    
+
     const now = new Date();
-    const timers = await Timer.find({ 
-      shopDomain: shop, 
+    const timers = await Timer.find({
+      shopDomain: shop,
       active: true,
       startDate: { $lte: now },
       endDate: { $gt: now }
     });
-    
+
     res.json({ timers });
   } catch (err) {
     console.error(err);
@@ -25,7 +25,7 @@ export const getStorefrontTimers = async (req, res) => {
 export const getTimers = async (req, res) => {
   try {
     const shop = res.locals.shopify.session.shop;
-    console.log(shop,"shop");
+    console.log(shop, "shop");
     const timers = await Timer.find({ shopDomain: shop }).sort({ createdAt: -1 });
     res.status(200).json(timers);
   } catch (error) {
